@@ -1,0 +1,17 @@
+name: nyc-potholes
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.13
+  - numpy
+  - pandas
+  - matplotlib
+  - scipy
+  - seaborn
+  - scikit-learn
+  - jupyterlab
+  - ipykernel
+  - ipywidgets
+  - tqdm
+  - pip

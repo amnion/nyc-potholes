@@ -34,10 +34,25 @@ results = client.get(
     limit=100  # Socrata defaults to 1000
 )
 
+# Socrata returns everything as strings. Coerce explicitly.
 df = pd.DataFrame.from_records(results)
+
+# Datetime columns
+date_cols = ['created_date', 'closed_date', 'due_date', 'resolution_action_updated_date']
+for col in date_cols:
+    if col in df.columns:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+
+# Numeric columns
+numeric_cols = ['latitude', 'longitude', 'x_coordinate_state_plane', 'y_coordinate_state_plane']
+for col in numeric_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+
+# Save as CSV for human inspection and Parquet for the rest
 print(f"Pulled {len(df):,} rows on {datetime.now().isoformat()}")
 
-# Save both formats. CSV for human inspection, Parquet for the SQL layer.
 df.to_csv("data/raw/311_pothole.csv", index=False)
 df.to_parquet("data/raw/311_pothole.parquet", index=False)
 

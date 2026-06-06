@@ -1,0 +1,33 @@
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Data — be deliberate about this section
+data/raw/*.csv
+data/raw/*.parquet
+!data/raw/.gitkeep
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# Notebook output (optional, opinionated)
+# *.ipynb

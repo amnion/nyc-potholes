@@ -14,4 +14,8 @@ dependencies:
   - ipykernel
   - ipywidgets
   - tqdm
+  - sodapy
+  - pyarrow
+  - duckdb
+  - python-dotenv
   - pip

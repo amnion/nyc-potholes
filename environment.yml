@@ -17,5 +17,7 @@ dependencies:
   - sodapy
   - pyarrow
   - duckdb
+  - shapely
+  - geopandas
   - python-dotenv
   - pip

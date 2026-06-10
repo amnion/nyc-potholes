@@ -85,3 +85,15 @@ Calendar years 2023 and 2024 (two full years post-redistricting). Cleaner than d
 ## Timeline
 
 Days 1–10 per project plan. Slip means cutting from "Open risks" sensitivity work first, then secondary dashboard views, never from the write-up or the limitations section.
+
+## NOTES ON PROGRESS
+
+- found only ~54% of rows had lat/lon data, so switched to using community board column as unit of spatial analysis
+Claude suggests I include some version of this in the write-up, under "key learnings" or "data structure notes":
+46% of pothole reports lack point coordinates, but this is not random failure. The address_type field reveals three intake modes: ADDRESS (full address + coordinates), INTERSECTION (cross-streets + coordinates), and BLOCKFACE (a street segment defined by its endpoints, with no point coordinate stored). Roughly 46% of pothole reports are BLOCKFACE-typed, reflecting how potholes are physically located — they belong to a stretch of road rather than a single point. Reporters calling about "the pothole on 5th Ave between 42nd and 43rd" produce BLOCKFACE rows by design.
+
+Project framing evolved during data exploration:
+- Original framing: 311 representativeness vs DOT-as-ground-truth
+- Final framing: two-attention-signal divergence
+- Why the change: source overlap + YRD non-stationarity meant DOT signal couldn't carry the ground-truth interpretation
+- Future work: incorporate independent need proxies (LION road network, pavement condition data) for true representativeness analysis

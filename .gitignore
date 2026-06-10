@@ -33,4 +33,5 @@ data/final/*
 *.duckdb.wal
 
 # Notebook output
+notebooks/
 # *.ipynb

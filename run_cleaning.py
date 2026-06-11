@@ -13,6 +13,7 @@ PIPELINE = [
     ("sql/02_clean_dot_repairs.sql",   "data/processed/dot_pothole_repairs_clean.parquet")
 ]
 
+# Run SQL cleaning file on each raw data file
 for sql_path, output_path in PIPELINE:
     sql = Path(sql_path).read_text()
     df  = con.sql(sql).df()

@@ -25,7 +25,7 @@ DATASETS = [
         'limit':        200_000,
         'where':        (
             "complaint_type = 'Street Condition' "
-            "AND descriptor IN ('Pothole', 'Pothole, Highway') "
+            "AND descriptor IN ('Pothole', 'Pothole - Highway', 'Pothole - Tunnel') "
             "AND created_date >= '2023-01-01T00:00:00' "
             "AND created_date < '2025-01-01T00:00:00' "
         ),

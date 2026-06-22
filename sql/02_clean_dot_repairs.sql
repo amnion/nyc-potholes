@@ -6,7 +6,7 @@ Purpose:     Clean and enrich raw NYC DOT pothole work orders for downstream
 Inputs:      data/raw/dot_pothole_repairs.parquet (pulled via 00_fetch_data.py)
 Output:      One row per deduplicated work order with spelled-out borough,
              derived time fields, and polyline centroid coordinates.
-             Approximately 32,376 rows.
+             Should yield 32,387 rows.
 Key outputs:
     - borough: full name (matches 311 convention)
     - report_month: rptdate truncated to month, for time-series aggregation
@@ -30,12 +30,17 @@ WITH source AS (
         centroid_lat,
         centroid_lon
     FROM 'data/raw/dot_pothole_repairs.parquet'
-), repairs_filtered AS (
+),
+repairs_filtered AS (
     SELECT *
     FROM source
     WHERE
         (rptdate >= CAST('2023-01-01' AS TIMESTAMP) AND rptdate < CAST('2025-01-01' AS TIMESTAMP))
-), repairs_enriched AS (
+),
+-- Note: source field retained for limitations analysis. ~55% of work orders
+-- in this window are citizen-initiated (CTZ), which is not fully independent 
+-- of the 311 signal.
+repairs_enriched AS (
     SELECT *,
         -- Spell out borough to match 311 dataset conventions.
         CASE
@@ -51,14 +56,16 @@ WITH source AS (
         -- Useful for secondary "time-to-closure by district" dashboard view.
         DATE_DIFF('day', rptdate, rptclosed) AS days_to_close
     FROM repairs_filtered
-), repairs_ranked AS (
+),
+repairs_ranked AS (
     SELECT *,
         ROW_NUMBER() OVER (
             PARTITION BY centroid_lat, centroid_lon, DATE(rptclosed)
             ORDER BY rptclosed ASC
         ) AS row_num
     FROM repairs_enriched
-), repairs_deduped AS (
+),
+repairs_deduped AS (
     SELECT *
     FROM repairs_ranked
     WHERE row_num = 1

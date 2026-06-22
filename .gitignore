@@ -12,6 +12,9 @@ __pycache__/
 .venv/
 venv/
 
+# R
+.Rhistory
+
 # OS clutter
 .DS_Store
 Thumbs.db
@@ -34,4 +37,9 @@ data/final/*
 
 # Notebook output
 notebooks/
-# *.ipynb
+*.ipynb
+!FigureNotebook.ipynb
+
+# Other
+SCOPING.md
+WRITEUP.md

@@ -23,8 +23,7 @@ dot = pd.read_parquet(DOT_INPUT)
 dot_gdf = gpd.GeoDataFrame(
     data=dot,
     geometry=gpd.points_from_xy(dot['centroid_lon'], dot['centroid_lat']),
-    crs="EPSG:4326"
-)
+    crs="EPSG:4326")
 
 # --- Load community board polygons
 cb = gpd.read_file(CB_GEODATA)
@@ -41,5 +40,6 @@ out = (dot_cb_gdf[list(dot.columns) + ['boro_cd']]
         .rename(columns={'boro_cd': 'borocd'})
         .astype({'borocd': 'int64'})
         .copy())
+out['is_jia'] = (out['borocd'] % 100) >= 20 # flag for JIA
 out.to_parquet(OUTPUT, index=False)
 print(f"Saved to {OUTPUT}")

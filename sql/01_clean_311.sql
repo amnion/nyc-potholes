@@ -29,7 +29,8 @@ WITH source AS (
         latitude,
         longitude
     FROM 'data/raw/311_pothole.parquet'
-), complaints_filtered AS (
+),
+complaints_filtered AS (
     -- Enforce time window, key existence, some geospatial data
     SELECT *
     FROM source
@@ -40,7 +41,8 @@ WITH source AS (
             (longitude IS NOT NULL AND latitude IS NOT NULL) 
             OR community_board NOT LIKE '0 %'
             )
-), complaints_enriched AS (
+),
+complaints_enriched AS (
     -- Transform community board string to BoroCD identifiers, flags for interesting locales
     SELECT *,
         -- BoroCD identifiers
@@ -72,7 +74,8 @@ WITH source AS (
         -- Time to close
         DATE_DIFF('day', created_date, closed_date) AS days_to_close
     FROM complaints_filtered
-), complaints_ranked AS (
+),
+complaints_ranked AS (
     SELECT *,
     CASE
         WHEN latitude IS NOT NULL
@@ -83,7 +86,8 @@ WITH source AS (
         ELSE 1 -- no-coord rows cant be determined if duplicate; keep all
     END AS row_num
     FROM complaints_enriched
-), complaints_deduped AS (
+),
+complaints_deduped AS (
     SELECT *
     FROM complaints_ranked
     WHERE row_num = 1

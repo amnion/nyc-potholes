@@ -1,0 +1,333 @@
+
+```{r}
+library(nanoparquet)
+library(ggplot2)
+library(corrplot)
+library(MASS)
+library(dplyr)
+
+df_modeling <- read_parquet('data/final/analytical_table.parquet')
+```
+
+```{r}
+df_cd <- df_modeling %>%
+  group_by(borocd) %>%
+  summarise(
+    n_reports_311 = sum(n_reports_311),
+    n_repairs_dot = sum(n_repairs_dot),
+    total_population = first(total_population),
+    road_miles = first(road_miles),
+    median_household_income = first(median_household_income) / 10000,
+    rental_vacancy_rate = first(rental_vacancy_rate),
+    pct_renters = first(pct_renters),
+    pct_with_college_degree = first(pct_with_college_degree),
+    pct_foreign_born = first(pct_foreign_born)
+  )
+
+df_cd_std <- df_cd %>%
+    mutate(across(
+        c(median_household_income, pct_renters, pct_foreign_born),
+        ~ as.numeric(scale(.))  # mean-center, divide by SD
+    ))
+```
+
+```{r}
+M = cor(df_cd[, !(names(df_cd) %in% c("report_month", "borocd"))])
+corrplot(M)
+```
+
+```{r}
+m_311 <- glm.nb(
+  n_reports_311 ~
+    log(total_population) +
+    median_household_income +
+    pct_foreign_born +
+    pct_renters +
+    offset(log(road_miles)),
+  data = df_cd_std
+)
+m_dot <- glm.nb(
+  n_repairs_dot ~
+    log(total_population) +
+    median_household_income +
+    pct_foreign_born +
+    pct_renters +
+    offset(log(road_miles)),
+  data = df_cd_std
+)
+```
+
+```{r}
+df_cd_std$predicted_311 <- predict(m_311, type = "response")
+df_cd_std$predicted_dot <- predict(m_dot, type = "response")
+df_cd_std$resid_311 <- residuals(m_311, type = "pearson")
+df_cd_std$resid_dot <- residuals(m_dot, type = "pearson")
+df_cd_std$gap <- df_cd_std$resid_311 - df_cd_std$resid_dot
+df_cd_std$is_outlier <- abs(df_cd_std$gap) > quantile(abs(df_cd_std$gap), 0.9)
+```
+
+```{r}
+cor(df_cd_std$resid_311, df_cd_std$resid_dot)
+```
+
+```{r}
+summary(m_311)
+```
+
+```{r}
+summary(m_dot)
+```
+
+```{r}
+ggplot(df_cd_std, aes(x = predicted_311, y = n_reports_311)) +
+    geom_point(aes(size = road_miles), alpha = 0.6) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
+    scale_x_continuous(trans = "log10", limits = c(50, 5000)) +
+    scale_y_continuous(trans = "log10", limits = c(50, 5000)) +
+    labs(
+        x = "Predicted reports (model)",
+        y = "Observed reports (data)",
+        size = "Road miles",
+        title = "311 Pothole Reports: Model Fit by Community District"
+    ) +
+    theme_minimal()
+```
+
+```{r}
+ggplot(df_cd_std, aes(x = predicted_dot, y = n_repairs_dot)) +
+    geom_point(aes(size = road_miles), alpha = 0.6) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
+    scale_x_continuous(trans = "log10", limits = c(50, 5000)) +
+    scale_y_continuous(trans = "log10", limits = c(50, 5000)) +
+    labs(
+        x = "Predicted repairs (model)",
+        y = "Observed repairs (data)",
+        size = "Road miles",
+        title = "DOT Pothole Repairs: Model Fit by Community District"
+    ) +
+    theme_minimal()
+```
+
+```{r}
+library(broom)
+library(dotwhisker)
+
+# Combine the two models for a paired plot
+models <- list("311 Reports" = m_311, "DOT Repairs" = m_dot)
+
+dwplot(models, 
+       vars_order = c("median_household_income", "pct_renters", 
+                      "pct_foreign_born", "log(total_population)"),
+       dot_args = list(size = 3)) +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "grey50") +
+    theme_minimal() +
+    labs(
+        title = "Predictors of NYC Pothole Reporting Attention",
+        subtitle = "Negative binomial regression with road-mile exposure offset",
+        x = "Coefficient estimate (95% CI)"
+    )
+```
+
+
+```{r}
+ggplot(df_cd_std, aes(x = resid_311, y = resid_dot)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
+    geom_hline(yintercept = 0, color = "grey80", linewidth = 0.3) +
+    geom_vline(xintercept = 0, color = "grey80", linewidth = 0.3) +
+    geom_point(aes(color = is_outlier), size = 3, alpha = 0.7) +
+    geom_text(data = filter(df_cd_std, is_outlier), 
+              aes(label = borocd), 
+              hjust = -0.3, size = 3) +
+    scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "firebrick"), guide = "none") +
+    labs(
+        x = "311 Pearson residual",
+        y = "DOT Pearson residual",
+        title = "Citizen vs City Pothole Attention: Where the Signals Diverge",
+        subtitle = paste0("Pearson correlation = ", round(cor(df_cd_std$resid_311, df_cd_std$resid_dot), 2))
+    ) +
+    theme_minimal()
+```
+
+```{r}
+# A function that takes the data, resamples CDs with replacement, refits both 
+# models, and returns the per-CD gap.
+bootstrap_gap <- function(data, n_boot = 1000) {
+  n_cd <- nrow(data)
+  boot_gaps <- matrix(NA, nrow = n_boot, ncol = n_cd)
+    
+  tryCatch(
+    for (b in 1:n_boot) {
+      # Resample rows (CDs) with replacement
+      boot_idx <- sample(n_cd, replace = TRUE)
+      boot_data <- data[boot_idx, ]
+      
+      # Refit both models
+      m311_b <- glm.nb(n_reports_311 ~ 
+                         log(total_population) +
+                         median_household_income +
+                         pct_foreign_born +
+                         pct_renters + 
+                         offset(log(road_miles)), 
+                       data = boot_data)
+      mdot_b <- glm.nb(n_repairs_dot ~
+                         log(total_population) +
+                         median_household_income +
+                         pct_foreign_born +
+                         pct_renters + 
+                         offset(log(road_miles)), 
+                       data = boot_data)
+      
+      # Predict on the ORIGINAL data, not the bootstrap sample,
+      # so every CD gets a prediction every iteration
+      pred_311 <- predict(m311_b, newdata = data, type = "response")
+      pred_dot <- predict(mdot_b, newdata = data, type = "response")
+      
+      # Pearson residuals on original data
+      resid_311 <- (data$n_reports_311 - pred_311) / sqrt(pred_311 + pred_311^2 / m311_b$theta)
+      resid_dot <- (data$n_repairs_dot - pred_dot) / sqrt(pred_dot + pred_dot^2 / mdot_b$theta)
+      
+      boot_gaps[b, ] <- resid_311 - resid_dot
+    }
+  )
+  boot_gaps
+}
+```
+
+```{r}
+boot_gaps <- bootstrap_gap(df_cd_std, n_boot = 2000)
+ci <- t(apply(boot_gaps, MARGIN = 2, quantile, probs = c(0.025, 0.975)))
+colnames(ci) = c('ci_lower', 'ci_upper')
+
+is_significant <- !(ci[,'ci_lower'] <= 0 & 0 <= ci[,'ci_upper'])
+
+df_cd_std <- cbind(df_cd_std, ci, is_significant)
+
+mean(df_cd_std$is_significant)
+```
+
+
+```{r}
+ggplot(df_cd_std, aes(x = resid_311, y = resid_dot)) +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
+    geom_hline(yintercept = 0, color = "grey80", linewidth = 0.3) +
+    geom_vline(xintercept = 0, color = "grey80", linewidth = 0.3) +
+    geom_point(aes(color = is_significant), size = 3, alpha = 0.7) +
+#    geom_text(data = filter(df_cd_std, is_significant), 
+#              aes(label = borocd), 
+#              hjust = -0.3, size = 3) +
+    scale_color_manual(values = c("FALSE" = "grey60", "TRUE" = "firebrick"), guide = "none") +
+    labs(
+        x = "311 Pearson residual",
+        y = "DOT Pearson residual",
+        title = "Citizen vs City Pothole Attention: Where the Signals Diverge",
+        subtitle = paste0("Pearson correlation = ", round(cor(df_cd_std$resid_311, df_cd_std$resid_dot), 2))
+    ) +
+    theme_minimal()
+```
+
+```{r}
+# Histogram of all gap point estimates (means across iterations)
+gap_means <- colMeans(boot_gaps)
+hist(gap_means, breaks = 20, main = "Mean gap across bootstrap iterations")
+
+# For a few specific CDs, plot their full bootstrap distribution
+par(mfrow = c(2, 3))
+for (i in c(1, 15, 30, 45, 50, 59)) {
+    hist(boot_gaps[, i], breaks = 30, 
+         main = paste("CD index", i, "- bootstrap dist"))
+    abline(v = 0, col = "red", lwd = 2)
+    abline(v = quantile(boot_gaps[, i], c(0.025, 0.975)), col = "blue", lty = 2)
+}
+
+```
+
+
+```{r}
+parametric_bootstrap <- function(data, m311, mdot, n_boot = 2000) {
+    n_cd <- nrow(data)
+    boot_gaps <- matrix(NA, nrow = n_boot, ncol = n_cd)
+    
+    # Get fitted means and thetas from the original models
+    mu_311 <- fitted(m311)
+    mu_dot <- fitted(mdot)
+    theta_311 <- m311$theta
+    theta_dot <- mdot$theta
+    
+    for (b in 1:n_boot) {
+        # Simulate new outcome data from negative binomial with fitted means
+        sim_311 <- rnbinom(n_cd, mu = mu_311, size = theta_311)
+        sim_dot <- rnbinom(n_cd, mu = mu_dot, size = theta_dot)
+        
+        # Refit both models on simulated outcomes
+        sim_data <- data
+        sim_data$n_reports_311 <- sim_311
+        sim_data$n_repairs_dot <- sim_dot
+        
+        m311_b <- tryCatch(
+            glm.nb(n_reports_311 ~ log(total_population) + median_household_income +
+                   pct_foreign_born + pct_renters + offset(log(road_miles)),
+                   data = sim_data),
+            error = function(e) NULL
+        )
+        mdot_b <- tryCatch(
+            glm.nb(n_repairs_dot ~ log(total_population) + median_household_income +
+                   pct_foreign_born + pct_renters + offset(log(road_miles)),
+                   data = sim_data),
+            error = function(e) NULL
+        )
+        
+        if (is.null(m311_b) || is.null(mdot_b)) next
+        
+        pred_311 <- predict(m311_b, newdata = sim_data, type = "response")
+        pred_dot <- predict(mdot_b, newdata = sim_data, type = "response")
+        
+        resid_311 <- (sim_data$n_reports_311 - pred_311) / sqrt(pred_311 + pred_311^2 / m311_b$theta)
+        resid_dot <- (sim_data$n_repairs_dot - pred_dot) / sqrt(pred_dot + pred_dot^2 / mdot_b$theta)
+        
+        boot_gaps[b, ] <- resid_311 - resid_dot
+    }
+    
+    boot_gaps
+}
+```
+
+```{r}
+# 1. Compute observed gaps (your original point estimates)
+observed_gap <- df_cd_std$gap
+
+# 2. Run parametric bootstrap to get null distribution per CD
+null_gaps <- parametric_bootstrap(df_cd_std, m_311, m_dot, n_boot = 1000)
+
+# 3. For each CD, compute the p-value: what fraction of null gaps are 
+#    more extreme than observed?
+p_values <- sapply(1:ncol(null_gaps), function(i) {
+    mean(abs(null_gaps[, i]) >= abs(observed_gap[i]))
+})
+
+# 4. Adjust for multiple testing (59 tests)
+p_adjusted <- p.adjust(p_values, method = "BH")
+significant <- p_adjusted < 0.05
+print(paste('Number Significant: ', sum(significant)))
+```
+
+```{r}
+# Histogram of all gap point estimates (means across iterations)
+gap_means <- colMeans(null_gaps)
+hist(gap_means, breaks = 20, main = "Mean gap across bootstrap iterations")
+
+# For a few specific CDs, plot their full bootstrap distribution
+par(mfrow = c(2, 3))
+for (i in c(1, 15, 30, 45, 50, 59)) {
+    hist(null_gaps[, i], breaks = 30, 
+         main = paste("CD index", i, "- bootstrap dist"))
+    abline(v = 0, col = "red", lwd = 2)
+    abline(v = quantile(null_gaps[, i], c(0.025, 0.975)), col = "blue", lty = 2)
+}
+
+```
+
+```{r}
+write.csv(broom::tidy(m_311, conf.int = TRUE), 'data/final/coefficients_311.csv')
+write.csv(broom::tidy(m_dot, conf.int = TRUE), 'data/final/coefficients_dot.csv')
+write.csv(df_cd_std, 'data/final/model_preds_resids.csv')
+```

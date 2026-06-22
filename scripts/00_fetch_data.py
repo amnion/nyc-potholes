@@ -89,8 +89,8 @@ def fetch_dataset(client, config):
     # Save as CSV for human inspection and Parquet for the rest
     print(f'Pulled {len(df):,} rows on {datetime.now().isoformat()}')
 
-    df.to_csv(f"data/raw/{config['name']}.csv", index=False)
-    df.to_parquet(f"data/raw/{config['name']}.parquet", index=False)
+    df.to_csv(f"../data/raw/{config['name']}.csv", index=False)
+    df.to_parquet(f"../data/raw/{config['name']}.parquet", index=False)
 
     print(f"Saved to data/raw/{config['name']}")
 

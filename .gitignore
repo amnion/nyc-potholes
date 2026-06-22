@@ -37,9 +37,6 @@ data/final/*
 
 # Notebook output
 notebooks/
-*.ipynb
-!FigureNotebook.ipynb
 
 # Other
-SCOPING.md
 WRITEUP.md

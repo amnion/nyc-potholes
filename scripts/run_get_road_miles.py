@@ -28,9 +28,9 @@ import geopandas as gpd
 import pandas as pd
 
 # --- Paths for loading and saving
-CB_GEODATA = "data/raw/community_districts.geojson"
-STREET_DATA = "data/raw/centerlines.geojson"
-OUTPUT = "data/processed/road_miles_by_cd.parquet"
+CB_GEODATA = "../data/raw/community_districts.geojson"
+STREET_DATA = "../data/raw/centerlines.geojson"
+OUTPUT = "../data/processed/road_miles_by_cd.parquet"
 
 # --- Load streets centerlines data and community board polygons with some cleaning
 streets = gpd.read_file(STREET_DATA)

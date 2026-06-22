@@ -14,9 +14,9 @@ import geopandas as gpd
 import pandas as pd
 
 # --- Paths for loading and saving
-DOT_INPUT = "data/processed/dot_pothole_repairs_clean.parquet"
-CB_GEODATA = "data/raw/community_districts.geojson"
-OUTPUT = "data/processed/dot_pothole_repairs_clean_borocd.parquet"
+DOT_INPUT = "../data/processed/dot_pothole_repairs_clean.parquet"
+CB_GEODATA = "../data/raw/community_districts.geojson"
+OUTPUT = "../data/processed/dot_pothole_repairs_clean_borocd.parquet"
 
 # --- Load cleaned DOT data and convert to GeoDataFrame
 dot = pd.read_parquet(DOT_INPUT)

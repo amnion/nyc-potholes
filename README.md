@@ -104,13 +104,13 @@ All sources are public. App token required for NYC OpenData API; everything else
 
 Variables retained: 
 ```text
-Dem_1923_CDTA.xlsx      Pop_1E      as total_population
-Dem_1923_CDTA.xlsx      MdAgeE      as median_age
-Econ_1923_CDTA.xlsx     MdHHIncE    as median_household_income
-Hous_1923_CDTA.xlsx     ROcHU1P     as pct_renters
-Hous_1923_CDTA.xlsx     RntVacRtE   as rental_vacancy_rate
-Soc_1923_CDTA.xlsx      EA_BchDHP   as pct_with_college_degree
-Soc_1923_CDTA.xlsx      Fb1P        as pct_foreign_born
+Dem_1923_CDTA.xlsx      Pop_1E      ->  total_population
+                        MdAgeE          median_age
+Econ_1923_CDTA.xlsx     MdHHIncE        median_household_income
+Hous_1923_CDTA.xlsx     ROcHU1P         pct_renters
+                        RntVacRtE       rental_vacancy_rate
+Soc_1923_CDTA.xlsx      EA_BchDHP       pct_with_college_degree
+                        Fb1P        ->  pct_foreign_born
 ```
 Variance and margin-of-error columns excluded.
 

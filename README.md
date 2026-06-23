@@ -2,7 +2,7 @@
 
 Quantifying where citizen 311 pothole reports diverge from NYC Department of Transportation repair activity, across 59 NYC community districts, 2023-2024.
 
-**Read the full write-up:** [Do 311 calls actually represent New Yorkers’ problems?](https://amnion.github.io/2026/01/03/data-science-lab.html)  
+**Read the full write-up:** [Do 311 calls actually represent New Yorkers’ problems?](https://amnion.github.io/2026/06/22/nyc-potholes.html)  
 **Interactive dashboard:** Tableau Public *(coming soon)*
 
 ---
@@ -103,14 +103,15 @@ All sources are public. App token required for NYC OpenData API; everything else
 **ACS extraction notes:** Demographic estimates were manually extracted from NYC Department of City Planning's Demographic, Economic, Housing, and Social ACS workbooks into `acs_covariates.csv`.
 
 Variables retained: 
-- Pop_1E (Dem_1923_CDTA.xlsx) as `total_population`
-- MdAgeE (Dem_1923_CDTA.xlsx) as `median_age`
-- MdHHIncE (Econ_1923_CDTA.xlsx) as `median_household_income`
-- ROcHU1P (Hous_1923_CDTA.xlsx) as `pct_renters`
-- RntVacRtE (Hous_1923_CDTA.xlsx) as `rental_vacancy_rate`
-- EA_BchDHP (Soc_1923_CDTA.xlsx) as `pct_with_college_degree`
-- Fb1P (Soc_1923_CDTA.xlsx) as `pct_foreign_born`
-
+```text
+Dem_1923_CDTA.xlsx      Pop_1E      as total_population
+Dem_1923_CDTA.xlsx      MdAgeE      as median_age
+Econ_1923_CDTA.xlsx     MdHHIncE    as median_household_income
+Hous_1923_CDTA.xlsx     ROcHU1P     as pct_renters
+Hous_1923_CDTA.xlsx     RntVacRtE   as rental_vacancy_rate
+Soc_1923_CDTA.xlsx      EA_BchDHP   as pct_with_college_degree
+Soc_1923_CDTA.xlsx      Fb1P        as pct_foreign_born
+```
 Variance and margin-of-error columns excluded.
 
 ---

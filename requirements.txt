@@ -1,0 +1,16 @@
+pandas
+numpy
+matplotlib
+scipy
+seaborn
+scikit-learn
+jupyterlab
+ipykernel
+ipywidgets
+tqdm
+sodapy
+pyarrow
+duckdb
+shapely
+geopandas
+python-dotenv

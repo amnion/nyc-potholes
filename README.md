@@ -3,7 +3,7 @@
 Quantifying where citizen 311 pothole reports diverge from NYC Department of Transportation repair activity, across 59 NYC community districts, 2023-2024.
 
 **Read the full write-up:** [Do 311 calls actually represent New Yorkers’ problems?](https://amnion.github.io/2026/06/22/nyc-potholes.html)  
-**Interactive dashboard:** Tableau Public *(coming soon)*
+**Interactive dashboard:** [Tableau Public](https://public.tableau.com/views/NYCPotholeReportingGapAnalysis/Dashboard?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)
 
 ---
 
@@ -99,6 +99,7 @@ All sources are public. App token required for NYC OpenData API; everything else
 | [Community Districts](https://data.cityofnewyork.us/City-Government/Community-Districts/5crt-au7u) | NYC's 59 sub-borough boundaries (v26b, May 2026) | GeoJSON download |
 | [Street Centerlines](https://data.cityofnewyork.us/City-Government/Centerline/inkn-q76z) | NYC street network for road-mile calculation | GeoJSON download |
 | [ACS 2019–2023 5-year](https://www.nyc.gov/content/planning/pages/resources/datasets/american-community-survey) | Demographic covariates at CD level | Excel workbooks |
+| [NYC Community Boards](https://data.cityofnewyork.us/City-Government/NYC-Community-Boards/ruf7-3wgc/) | Community board metadata (for dashboard) | CSV |
 
 **ACS extraction notes:** Demographic estimates were manually extracted from NYC Department of City Planning's Demographic, Economic, Housing, and Social ACS workbooks into `acs_covariates.csv`.
 

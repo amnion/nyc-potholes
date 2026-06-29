@@ -117,6 +117,8 @@ significant <- p_adjusted < 0.05
 print(paste('Number Significant: ', sum(significant)))
 
 # --- Write model results to file
-write.csv(broom::tidy(m_311, conf.int = TRUE), 'data/final/coefficients_311.csv')
-write.csv(broom::tidy(m_dot, conf.int = TRUE), 'data/final/coefficients_dot.csv')
-write.csv(df_cd_std, 'data/final/model_preds_resids.csv')
+write.csv(broom::tidy(m_311, conf.int = TRUE), '../data/final/coefficients_311.csv')
+write.csv(broom::tidy(m_dot, conf.int = TRUE), '../data/final/coefficients_dot.csv')
+write.csv(df_cd_std, '../data/final/model_preds_resids.csv')
+write.csv(df_modeling, '../data/final/analytical_table_temporal.csv')
+write.csv(df_cd, '../data/final/analytical_table.csv')
